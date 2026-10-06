@@ -37,10 +37,10 @@ Use these exact property names when reading or writing. Several have been rename
 |---|---|---|
 | `"Issue Summary"` | title | VERBATIM workflow title from Slack — do not paraphrase. Extract from "Title / Summary" field in the workflow. |
 | `"Incident Status"` | select | Use `"New"` for all new rows. Options: Not started / Pending RST / New / Investigating / On-Hold / Decision Pending / Fix in Progress / Rollout / Verification / Won't Fix / Feature Request / In progress / Done / Not an issue |
-| `"Date of Incident (UTC)"` | date | Extract date AND time from the "Date / time" field in the workflow. Always set `date:Date of Incident (UTC):is_datetime: 1`. Store as UTC — append `Z` if no timezone is present in the form value. Do NOT convert to SGT or any other local timezone. |
+| `"Date of Incident (UTC)"` | date | Extract date AND time from the "Date / time" field in the workflow, exactly as written. Always set `date:Date of Incident (UTC):is_datetime: 1`. Do NOT append `Z` or any other timezone indicator — store the literal date/time string as-is. Do NOT convert to SGT or any other local timezone. |
 | `"Source Channel"` | **multi_select** | Options: `#r5-trials-support` / `#tesco-trial-support` / `#voc-r5-production` / `Other` |
 | `"Slack Thread"` | url | Plain property name — no `userDefined:` prefix |
-| `"AUT Version"` | select | 1.0.4 / 1.1.3 / 1.0.0 / 1.0.2 / 1.0.3 / 0.6.7 / 0.6.4 |
+| `"AUT Version"` | 1.3.0 / 1.2.0 / 1.1.6 / 1.1.4 / 1.0.4 / 1.1.3 / 1.0.0 / 1.0.2 / 1.0.3 / 0.6.7 / 0.6.4 / 1.1.7 / 1.1.8 / 1.1.9 / 1.1.10 / 1.2.0 / 1.2.1 / 1.3.2 / 1.4.0 / 1.5.0 / 1.3.3 |
 | `"Severity"` | select | Urgent / High / Medium / Low |
 | `"Region"` | select | EU / Asia / US / ANZ / Other |
 | `"Reporter"` | person | **DO NOT SET** |
@@ -122,9 +122,9 @@ For candidates that passed dedup, call `mcp__Notion__notion-create-pages` with t
 
 ### Step 4 — Refresh thread summaries on open rows
 
-Query the intake DB for rows where `"Incident Status"` is NOT one of: Done / Won't Fix / Not an issue and `"Severity"` is: Urgent / High
+Query the intake DB for rows where "Incident Status" is NOT one of: Done / Won't Fix / Not an issue, "Severity" is: Urgent / High, and "Source Channel" includes #voc-r5-production.
 
-> **Every row created in this run's Step 3 always gets this treatment too, regardless of Severity.** The Severity filter above governs which *pre-existing* open rows get re-synced on a given run — it is not a gate on whether a brand-new incident gets its first summary. A freshly reported incident is very often missing Severity entirely (the Slack workflow form has no Severity/Priority field, and per the "never fabricate" rule you leave it blank) — if Step 4 only looked at Urgent/High, that row would silently never receive a Thread Summary/Suggestions body at all. So: run the Step 4 write below for (a) every row matching the Severity query above, **union** (b) every row this run just created in Step 3, with no Severity filter applied to (b).
+> **Every row created in this run's Step 3 always gets this treatment too, regardless of Severity. (These are always #voc-r5-production rows already, since that's the only channel Step 1 reads.)** The Severity filter above governs which *pre-existing* open rows get re-synced on a given run — it is not a gate on whether a brand-new incident gets its first summary. A freshly reported incident is very often missing Severity entirely (the Slack workflow form has no Severity/Priority field, and per the "never fabricate" rule you leave it blank) — if Step 4 only looked at Urgent/High, that row would silently never receive a Thread Summary/Suggestions body at all. So: run the Step 4 write below for (a) every row matching the Severity query above, **union** (b) every row this run just created in Step 3, with no Severity filter applied to (b).
 
 For each open row (from either (a) or (b) above):
 1. Read its `"Slack Thread"` URL to get the thread ID.
